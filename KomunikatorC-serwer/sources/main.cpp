@@ -10,11 +10,17 @@
 
 #define PORT 8080
 
-void thread_client(int new_socket,char buffer[]){
+struct header{
+	int msgId;
+};
+
+void thread_client(int new_socket){
 			int valread;
+			char buffer[1024];
 			while(1) {
 
-				valread = read( new_socket , buffer, 1024);
+				valread = recv( new_socket , buffer, 1024,0);
+
 
 				if(strcmp(buffer, "close") == 0){
 					close(new_socket);
@@ -22,7 +28,19 @@ void thread_client(int new_socket,char buffer[]){
 				}
 
 				printf("%s\n",buffer );
-				memset(buffer, 0, sizeof buffer);
+				//memset(buffer, 0, sizeof buffer);
+
+				header* msg = (header*) buffer;
+
+				if(msg->msgId == 1){
+					header msgresponse;
+					msgresponse.msgId = 0x1;
+					send(new_socket,&msgresponse,sizeof(header),0);
+				}
+				else {
+					std::cout << "nie działa" << '\n';
+				}
+
 			}
 
 }
@@ -76,7 +94,8 @@ while(1){
         exit(EXIT_FAILURE);
     }
 		std::cout << new_socket << '\n';
-		std::thread t(thread_client,new_socket,buffer);
+
+		std::thread t(thread_client,new_socket);
 		t.detach();
     //send(new_socket , hello , strlen(hello) , 0 );
     //printf("disconnected\n");

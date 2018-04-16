@@ -11,6 +11,15 @@
 
 using namespace std;
 
+struct header{
+  int msgId;
+};
+
+struct login{
+  char username[20];
+  char password[20];
+};
+
 int main(int argc, char const *argv[])
 {
     struct sockaddr_in address;
@@ -41,21 +50,33 @@ int main(int argc, char const *argv[])
         printf("\nConnection Failed \n");
         return -1;
     }
+
+    header msg;
+
+    msg.msgId = 0x1;
+
     std::cout << sock << '\n';
 
     std::cin.getline(buffer,1024);
 
 		while(strcmp(buffer, "exit") != 0){
-
-
-
-			send(sock , buffer , strlen(buffer) , 0 );
-      memset(buffer, 0, sizeof buffer);
       std::cin.getline(buffer,1024);
+      send(sock,&msg,sizeof(header),0);
+			//send(sock , buffer , strlen(buffer) , 0 )
+      //memset(buffer, 0, sizeof buffer);
+      //std::cin.getline(buffer,1024);
+      recv( sock , buffer, 1024,0);
+
+      header* msgresponse = (header*) buffer;
+
+      if(msgresponse -> msgId == 1) {
+        std::cout << "mozesz wprowadzic dane" << '\n';
+      } else {
+        std::cout << "nie mozesz elo 3 2 0" << '\n';
+      }
 
 
 			//cout<<"wartosc buffera: " << buffer[1];
-
 
   //  send(sock , hello , strlen(hello) , 0 );
    //	printf("Hello message sent\n");
