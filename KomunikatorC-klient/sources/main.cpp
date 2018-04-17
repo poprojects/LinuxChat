@@ -15,10 +15,15 @@ struct header{
   int msgId;
 };
 
-struct login{
+struct code{
+  int codeId;
+};
+
+struct registration{
   char username[20];
   char password[20];
 };
+int choice = 0;
 
 int main(int argc, char const *argv[])
 {
@@ -51,29 +56,64 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
-    header msg;
+do {
+    std::cout<<"*****MENU*****"<<'\n';
+    std::cout<<"1. Rejestracja"<<'\n';
+    std::cout<<"2. Logowanie"<<'\n';
+    std::cout<<"0. Exit"<<'\n';
 
-    msg.msgId = 0x1;
 
-    std::cout << sock << '\n';
+  //  std::cin.getline(buffer,1024);
 
-    std::cin.getline(buffer,1024);
 
-		while(strcmp(buffer, "exit") != 0){
-      std::cin.getline(buffer,1024);
-      send(sock,&msg,sizeof(header),0);
+		//while(strcmp(buffer, "exit") != 0){
+
+      //std::cin.getline(buffer,1024);
+      std::cin>>choice;
+
+      if(choice==1){
+        //Wysyałnie prośby o rejsetrację do serwera
+        header headerRequest;
+        headerRequest.msgId = 1;
+        send(sock,&headerRequest,sizeof(header),0);
+
+        //Odbiernie od serer wiadomości potwierdzającej rejestrację
+        recv( sock , buffer, 1024,0);
+        code* codeResponse = (code*) buffer;
+
+        if(codeResponse -> codeId == 200) {
+          registration registrationRequest;
+
+          std::cout << "Podaj nazwę użytkownika:" << '\n';
+          std::cin >> registrationRequest.username;
+          std::cout << "Podaj hasło:" << '\n';
+          std::cin >> registrationRequest.password;
+          send(sock,&registrationRequest,sizeof(registration),0);
+
+          recv( sock , buffer, 1024,0);
+          codeResponse = (code*) buffer;
+          if(codeResponse -> codeId == 200) {
+            std::cout << "Zapisano" << '\n';
+          } else {
+            std::cout << "Nie zapisano" << '\n';
+          }
+
+        } else {
+            std::cout << "nie mozesz elo 3 2 0" << '\n';
+        }
+      }
+      else if(choice==2){
+
+      }
+      else{
+
+      }
+
 			//send(sock , buffer , strlen(buffer) , 0 )
       //memset(buffer, 0, sizeof buffer);
       //std::cin.getline(buffer,1024);
-      recv( sock , buffer, 1024,0);
 
-      header* msgresponse = (header*) buffer;
 
-      if(msgresponse -> msgId == 1) {
-        std::cout << "mozesz wprowadzic dane" << '\n';
-      } else {
-        std::cout << "nie mozesz elo 3 2 0" << '\n';
-      }
 
 
 			//cout<<"wartosc buffera: " << buffer[1];
@@ -83,7 +123,8 @@ int main(int argc, char const *argv[])
     //valread = read( sock , buffer, 1024);
     //printf("%s\n",buffer );
 
-  }
+  //}
+} while (choice != 0);
     close(sock);
     return 0;
 }

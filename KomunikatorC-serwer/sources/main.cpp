@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <thread>
 #include <iostream>
+#include <fstream>
 
 #define PORT 8080
 
@@ -14,31 +15,48 @@ struct header{
 	int msgId;
 };
 
-void thread_client(int new_socket){
-			int valread;
+struct code{
+  int codeId;
+};
+
+struct registration{
+  char username[20];
+  char password[20];
+};
+
+void thread_client(int socket){
 			char buffer[1024];
 			while(1) {
+				recv( socket , buffer, 1024,0);
 
-				valread = recv( new_socket , buffer, 1024,0);
-
-
-				if(strcmp(buffer, "close") == 0){
-					close(new_socket);
-					break;
-				}
-
-				printf("%s\n",buffer );
 				//memset(buffer, 0, sizeof buffer);
+				header* headerRequest = (header*) buffer;
 
-				header* msg = (header*) buffer;
+				if(headerRequest->msgId == 1){
+					code codeResponse;
 
-				if(msg->msgId == 1){
-					header msgresponse;
-					msgresponse.msgId = 0x1;
-					send(new_socket,&msgresponse,sizeof(header),0);
+					codeResponse.codeId = 200;
+					send(socket,&codeResponse,sizeof(code),0);
+
+					recv( socket , buffer, 1024,0);
+					registration* registrationRequest = (registration*) buffer;
+
+					//zapis do pliku
+					std::ofstream fileUsers;
+					fileUsers.open("../users.txt", std::ios_base::app);
+					fileUsers<<registrationRequest->username<<":"<<registrationRequest->password<<'\n';
+					fileUsers.close();
+
+					codeResponse.codeId = 200;
+					send(socket,&codeResponse,sizeof(code),0);
+
+				}
+				else if(headerRequest->msgId == 2){
+
 				}
 				else {
-					std::cout << "nie działa" << '\n';
+					close(socket);
+					break;
 				}
 
 			}
@@ -52,7 +70,13 @@ int main(int argc, char const *argv[])
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
-    //char *hello = "Hello from server";
+
+		//tworzenie pliku
+		std::ifstream ifile("../users.txt");
+		if(ifile.good() == false) {
+			std::ofstream fileUsers("../users.txt");
+			fileUsers.close();
+		}
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
