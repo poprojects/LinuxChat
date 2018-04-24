@@ -8,11 +8,12 @@
 #include <thread>
 #include <iostream>
 #include <fstream>
-
 #define PORT 8080
 
-struct header{
+struct Header{
 	int msgId;
+	int size;
+	unsigned int content[1];
 };
 
 struct code{
@@ -24,35 +25,79 @@ struct registration{
   char password[20];
 };
 
-void thread_client(int socket){
-			char buffer[1024];
-			while(1) {
-				recv( socket , buffer, 1024,0);
+struct Login{
+  char username[20];
+  char password[20];
+};
 
-				//memset(buffer, 0, sizeof buffer);
-				header* headerRequest = (header*) buffer;
+void thread_client(int socket){
+
+			while(1) {
+
+				char buffer[1024];
+
+				unsigned int headerSize = sizeof(Header);
+
+				int countReceiveChar = 0;
+
+				int result = 0;
+
+				while(countReceiveChar < headerSize) {
+					result = recv( socket ,buffer + countReceiveChar,headerSize-countReceiveChar,0);
+					if( result == -1){
+						break;
+					} else {
+						 countReceiveChar += result;
+					}
+				}
+
+				Header* headerRequest = (Header*) buffer;
 
 				if(headerRequest->msgId == 1){
-					code codeResponse;
-
-					codeResponse.codeId = 200;
-					send(socket,&codeResponse,sizeof(code),0);
-
-					recv( socket , buffer, 1024,0);
-					registration* registrationRequest = (registration*) buffer;
-
-					//zapis do pliku
-					std::ofstream fileUsers;
-					fileUsers.open("../users.txt", std::ios_base::app);
-					fileUsers<<registrationRequest->username<<":"<<registrationRequest->password<<'\n';
-					fileUsers.close();
-
-					codeResponse.codeId = 200;
-					send(socket,&codeResponse,sizeof(code),0);
+					// code codeResponse;
+          //
+					// codeResponse.codeId = 200;
+					// send(socket,&codeResponse,sizeof(code),0);
+          //
+					// recv( socket , buffer, 1024,0);
+					// registration* registrationRequest = (registration*) buffer;
+          //
+					// //zapis do pliku
+					// std::ofstream fileUsers;
+					// fileUsers.open("../users.txt", std::ios_base::app);
+					// fileUsers<<registrationRequest->username<<":"<<registrationRequest->password<<'\n';
+					// fileUsers.close();
+          //
+					// codeResponse.codeId = 200;
+					// send(socket,&codeResponse,sizeof(code),0);
 
 				}
 				else if(headerRequest->msgId == 2){
 
+					unsigned int toRecive = headerRequest->size - sizeof(unsigned int);
+					std::cout << toRecive << '\n';
+
+					int countReceiveCharLogin = 0;
+
+					while(countReceiveCharLogin < toRecive) {
+						result = recv( socket ,buffer + countReceiveChar + countReceiveCharLogin,toRecive-countReceiveCharLogin,0);
+						if( result == -1){
+							break;
+						} else {
+							 countReceiveCharLogin += result;
+						}
+					}
+
+					Header* loginRequest = (Header*) buffer;
+
+					//result = recv( socket ,(char*) loginRequest,loginSize,0);
+					//std::cout << "result: " << result << '\n';
+					//std::cout << loginRequest->password<< '\n';
+					//int result = recv(socket, recv_buffer + recv_len, BUF_SIZE - recv_len, 0);
+
+					 std::cout << ((Login*) loginRequest->content)->username << '\n';
+					// std::cout << ((Login*) loginRequest->content)->password << '\n';
+					std::cout<<"header request: " <<headerRequest->size<<'\n';
 				}
 				else {
 					close(socket);
@@ -60,7 +105,6 @@ void thread_client(int socket){
 				}
 
 			}
-
 }
 
 int main(int argc, char const *argv[])

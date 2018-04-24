@@ -11,8 +11,10 @@
 
 using namespace std;
 
-struct header{
+struct Header{
   int msgId;
+  int size;
+  unsigned int content[1];
 };
 
 struct code{
@@ -23,6 +25,12 @@ struct registration{
   char username[20];
   char password[20];
 };
+
+struct Login{
+  char username[20];
+  char password[20];
+};
+
 int choice = 0;
 
 int main(int argc, char const *argv[])
@@ -72,37 +80,54 @@ do {
       std::cin>>choice;
 
       if(choice==1){
-        //Wysyałnie prośby o rejsetrację do serwera
-        header headerRequest;
-        headerRequest.msgId = 1;
-        send(sock,&headerRequest,sizeof(header),0);
-
-        //Odbiernie od serer wiadomości potwierdzającej rejestrację
-        recv( sock , buffer, 1024,0);
-        code* codeResponse = (code*) buffer;
-
-        if(codeResponse -> codeId == 200) {
-          registration registrationRequest;
-
-          std::cout << "Podaj nazwę użytkownika:" << '\n';
-          std::cin >> registrationRequest.username;
-          std::cout << "Podaj hasło:" << '\n';
-          std::cin >> registrationRequest.password;
-          send(sock,&registrationRequest,sizeof(registration),0);
-
-          recv( sock , buffer, 1024,0);
-          codeResponse = (code*) buffer;
-          if(codeResponse -> codeId == 200) {
-            std::cout << "Zapisano" << '\n';
-          } else {
-            std::cout << "Nie zapisano" << '\n';
-          }
-
-        } else {
-            std::cout << "nie mozesz elo 3 2 0" << '\n';
-        }
+        // //Wysyałnie prośby o rejsetrację do serwera
+        // header headerRequest;
+        // headerRequest.msgId = 1;
+        // send(sock,&headerRequest,sizeof(header),0);
+        //
+        // //Odbiernie od serer wiadomości potwierdzającej rejestrację
+        // recv( sock , buffer, 1024,0);
+        // code* codeResponse = (code*) buffer;
+        //
+        // if(codeResponse -> codeId == 200) {
+        //   registration registrationRequest;
+        //
+        //   std::cout << "Podaj nazwę użytkownika:" << '\n';
+        //   std::cin >> registrationRequest.username;
+        //   std::cout << "Podaj hasło:" << '\n';
+        //   std::cin >> registrationRequest.password;
+        //   send(sock,&registrationRequest,sizeof(registration),0);
+        //
+        //   recv( sock , buffer, 1024,0);
+        //   codeResponse = (code*) buffer;
+        //   if(codeResponse -> codeId == 200) {
+        //     std::cout << "Zapisano" << '\n';
+        //   } else {
+        //     std::cout << "Nie zapisano" << '\n';
+        //   }
+        //
+        // } else {
+        //     std::cout << "nie mozesz elo 3 2 0" << '\n';
+        // }
       }
       else if(choice==2){
+
+        unsigned int msgSize = sizeof(Header) + sizeof(Login) - sizeof(char);
+        void* msg = malloc(msgSize);
+
+        if(nullptr==msg){
+          return -1;
+        }
+
+        Header* createMsg =(Header*) msg;
+
+        createMsg->msgId = 2;
+        createMsg->size = sizeof(Login);
+
+        Login login = {"justynapatryktofajn","justynapatryktofajn"};
+        memcpy(createMsg->content,&login,sizeof(Login));
+
+        send(sock,createMsg,msgSize,0);
 
       }
       else{
@@ -120,7 +145,7 @@ do {
 
   //  send(sock , hello , strlen(hello) , 0 );
    //	printf("Hello message sent\n");
-    //valread = read( sock , buffer, 1024);
+    //valread = read( sock , buffer, 1024)
     //printf("%s\n",buffer );
 
   //}
